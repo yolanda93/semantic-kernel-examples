@@ -11,23 +11,23 @@ Examples of implementation to create different AI agents capabilities using sema
 ## Project Setup
 
 ### Create Azure OpenAI endpoint
-- Create new resource AI Foundry and deploy am OpenAI model endpoint
+- Create new resource AI Foundry and deploy an LLM model endpoint
 - Create a .venv with the following:
-´´´
+```
 AZURE_OPENAI_API_KEY=api_key
 AZURE_OPENAI_API_ENDPOINT=endpoint_url
 AZURE_OPENAI_API_VERSION=deployment_version
 AZURE_OPENAI_API_DEPLOYMENT_NAME=your_deployment_name
+```
 
-´´´
 ### Create an venv and install necessary packages
-´´´
+```
 python -m env semantic-kernel
 
 pip install openai
 pip install semantic-kernel
-´´´
+```
 
 ### Reference
-This project takes the reference examples from:
+This project takes some reference examples from:
 https://github.com/sphenry/agent_hack
