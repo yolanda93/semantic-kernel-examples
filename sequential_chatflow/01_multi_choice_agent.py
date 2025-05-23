@@ -60,12 +60,26 @@ async def on_chat_start():
         author=agent.name
     ).send()
 
-async def send_response(response_content, actions, next_state, author_name="TechSupportBot"):
-    """Helper function to send message, update history and state."""
-    await cl.Message(content=response_content, actions=actions, author=author_name).send()
+async def send_response_after_action(
+    triggering_action: cl.Action,
+    response_content: str,
+    new_actions_to_present: list[cl.Action],
+    next_state: str,
+    author_name: str = "TechSupportBot"
+):
+    """Helper function to log user action, send message, update history and state."""
     cl_history: list = cl.user_session.get("cl_history", [])
-    cl_history.append({"role": "user", "content": f"Action: {actions[0].name if actions else 'N/A'}"}) # Simplified user action logging
+
+    # Log the action the user just took, using the label for readability
+    cl_history.append({"role": "user", "content": f"Action: {triggering_action.label}"})
+
+    # Send the bot's response message with new actions
+    await cl.Message(content=response_content, actions=new_actions_to_present, author=author_name).send()
+
+    # Log the assistant's response
     cl_history.append({"role": "assistant", "content": response_content})
+
+    # Update history and state in the session
     cl.user_session.set("cl_history", cl_history)
     cl.user_session.set("conversation_state", next_state)
 
@@ -73,64 +87,50 @@ async def send_response(response_content, actions, next_state, author_name="Tech
 async def on_action_internet_issue(action: cl.Action):
     agent: ChatCompletionAgent = cl.user_session.get("tech_support_agent")
     response_content = "Okay, for Internet Issues, have you tried restarting your modem and router?"
-    actions = [
+    new_actions = [
         cl.Action(name="internet_restarted_yes", value="Yes", label="Yes, I tried", payload={"value": "Yes"}),
-        cl.Action(name="internet_restarted_no", value="No", label="No, I haven\'t", payload={"value": "No"}),
+        cl.Action(name="internet_restarted_no", value="No", label="No, I haven't", payload={"value": "No"}),
     ]
-    await send_response(response_content, actions, STATE_INTERNET_ASK_RESTART, agent.name)
-    # Optionally, acknowledge the action
-    # await cl.Message(content=f"Processing: {action.label}...").send()
+    await send_response_after_action(action, response_content, new_actions, STATE_INTERNET_ASK_RESTART, agent.name)
 
 @cl.action_callback("software_problem")
 async def on_action_software_problem(action: cl.Action):
     agent: ChatCompletionAgent = cl.user_session.get("tech_support_agent")
     response_content = "For Software Problems, which software are you having trouble with? Please type the name."
-    await send_response(response_content, [], STATE_SOFTWARE_ASK_NAME, agent.name)
+    await send_response_after_action(action, response_content, [], STATE_SOFTWARE_ASK_NAME, agent.name)
 
 @cl.action_callback("hardware_failure")
 async def on_action_hardware_failure(action: cl.Action):
     agent: ChatCompletionAgent = cl.user_session.get("tech_support_agent")
-    response_content = "I\'m sorry to hear you\'re having a hardware failure. To help us diagnose it, please describe the symptoms you\'re observing."
-    await send_response(response_content, [], STATE_HARDWARE_ASK_SYMPTOMS, agent.name)
+    response_content = "I'm sorry to hear you're having a hardware failure. To help us diagnose it, please describe the symptoms you're observing."
+    await send_response_after_action(action, response_content, [], STATE_HARDWARE_ASK_SYMPTOMS, agent.name)
 
 @cl.action_callback("internet_restarted_yes")
 async def on_action_internet_restarted_yes(action: cl.Action):
     agent: ChatCompletionAgent = cl.user_session.get("tech_support_agent")
     response_content = "Got it. Could you please describe the issue in more detail? For example, are websites loading slowly, or are you completely disconnected?"
-    await send_response(response_content, [], STATE_INTERNET_RESTARTED_YES, agent.name)
+    await send_response_after_action(action, response_content, [], STATE_INTERNET_RESTARTED_YES, agent.name)
 
 @cl.action_callback("internet_restarted_no")
 async def on_action_internet_restarted_no(action: cl.Action):
     agent: ChatCompletionAgent = cl.user_session.get("tech_support_agent")
     response_content = "Please try restarting your modem and router first. This often resolves common connectivity issues. Let me know if that helps!"
-    # We expect user to type a response or click "Yes" / "No" if they try again.
-    # For now, let's assume they will type something or we can offer to guide them.
-    # Or, we can transition to a state where they confirm if they've done it.
-    # For simplicity, let's go to a state expecting typed input.
-    await send_response(response_content, [], STATE_INTERNET_RESTARTED_NO, agent.name)
+    await send_response_after_action(action, response_content, [], STATE_INTERNET_RESTARTED_NO, agent.name)
 
 
 @cl.action_callback("start_over")
-async def on_action_start_over(action: cl.Action):
+async def on_action_start_over(action: cl.Action): # 'action' is the "start_over" action
     agent: ChatCompletionAgent = cl.user_session.get("tech_support_agent")
-    cl.user_session.set("conversation_state", STATE_INITIAL)
-    cl_history: list = cl.user_session.get("cl_history", [])
-    cl_history.append({"role": "user", "content": "Action: Start Over"})
-    cl.user_session.set("cl_history", cl_history)
-
-    initial_actions_final = [
+    response_content = "Welcome back to Tech Support! How can I help you today? Please choose an option:"
+    new_actions = [
         cl.Action(name="internet_issue", value="Internet Issue", label="Internet Issue", payload={"value": "Internet Issue"}),
         cl.Action(name="software_problem", value="Software Problem", label="Software Problem", payload={"value": "Software Problem"}),
         cl.Action(name="hardware_failure", value="Hardware Failure", label="Hardware Failure", payload={"value": "Hardware Failure"}),
     ]
-    response_content = "Welcome back to Tech Support! How can I help you today? Please choose an option:"
-    await cl.Message(
-        content=response_content,
-        actions=initial_actions_final,
-        author=agent.name
-    ).send()
-    cl_history.append({"role": "assistant", "content": response_content})
-    cl.user_session.set("cl_history", cl_history)
+    # The helper will log "Action: Start Over" (using action.label)
+    # and then send the response_content with new_actions.
+    # It will also set the state to STATE_INITIAL.
+    await send_response_after_action(action, response_content, new_actions, STATE_INITIAL, agent.name)
 
 
 @cl.on_message
