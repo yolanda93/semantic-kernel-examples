@@ -22,10 +22,11 @@ AZURE_OPENAI_API_DEPLOYMENT_NAME=your_deployment_name
 
 ### Create an venv and install necessary packages
 ```
-python -m env semantic-kernel
+python -m venv .venv
 
 pip install openai
 pip install semantic-kernel
+pip install chainlit
 ```
 
 ### Reference
