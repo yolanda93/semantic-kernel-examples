@@ -29,6 +29,20 @@ pip install semantic-kernel
 pip install chainlit
 ```
 
-### Reference
+## Usage
+
+Simple agents (without ui)
+
+```
+python 00_initial_agent.py
+```
+
+Agents with chainlit Chat UI 
+
+```
+chainlit run 01_simple_chat_agent.py -w
+```
+
+## References
 This project takes some reference examples from:
 https://github.com/sphenry/agent_hack
