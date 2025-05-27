@@ -14,9 +14,9 @@
 ```
 chainlit run sequential_chatflow/00_simple_chat_agent.py -w
 ```
-
-![alt text](./img/simple-chatui.png)
-
+<p align="center">
+  <img src="https://github.com/yolanda93/semantic-kernel-examples/blob/main/00_sequential_chatflow/img/simple-chatui.png" width="500">
+</p>
 ### Implementation workflow
 ![alt text](./img/simple-workflow.png)
 
